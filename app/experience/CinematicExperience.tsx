@@ -186,7 +186,7 @@ export default function CinematicExperience() {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [showResult, setShowResult] = useState(false);
   const [showMap, setShowMap] = useState(false);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [storageReady, setStorageReady] = useState(false);
 
   const currentChapter = chapters[chapter];
   const currentScene = currentChapter.scenes[scene];
@@ -211,16 +211,19 @@ export default function CinematicExperience() {
       }
     } catch {
       // Progress is an enhancement; private browsing or blocked storage must not break the experience.
+    } finally {
+      setStorageReady(true);
     }
   }, []);
 
   useEffect(() => {
+    if (!storageReady) return;
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ chapter, scene, answers }));
     } catch {
       // Continue without persistence if storage is unavailable.
     }
-  }, [chapter, scene, answers]);
+  }, [chapter, scene, answers, storageReady]);
 
   const goTo = useCallback((nextChapter: number, nextScene: number) => {
     const safeChapter = Math.min(Math.max(nextChapter, 0), chapters.length - 1);
@@ -252,7 +255,7 @@ export default function CinematicExperience() {
   const next = () => {
     if (scene + 1 < currentChapter.scenes.length) goTo(chapter, scene + 1);
     else if (chapter + 1 < chapters.length) goTo(chapter + 1, 0);
-    else setIsPlaying(false);
+    else setShowResult(true);
   };
 
   const sceneNumber = useMemo(() => String(sceneIndex + 1).padStart(2, "0"), [sceneIndex]);
